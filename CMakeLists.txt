@@ -16,9 +16,9 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(glfw glm)
-add_subdirectory(glad)
+add_subdirectory(deps/glad)
 
-add_executable(game src/main.cpp)
+add_executable(game deps/stb_image.h src/main.cpp src/GLRenderer.cpp src/GLRenderer.h)
 
 target_link_libraries(
         game
