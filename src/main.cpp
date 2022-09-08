@@ -12,7 +12,7 @@
  * To implement:
  * >> OpenWindow(...);
  * >> CloseWindow(...);
- * ResizeWindow(int32_t width, int32_t height);
+ * >> ResizeWindow(int32_t width, int32_t height);
  * >> CreateTextureArray(images[]); // Returns a handle/hash to a texture array.
  * >> BeginDrawing();
  * >> EndDrawing();
@@ -96,5 +96,5 @@ int main(void)
 
 void ResizeCallback(GLFWwindow* window, int32_t width, int32_t height)
 {
-	static_cast<GLRenderer*>(glfwGetWindowUserPointer(window))->ResizeWindow(width, height);
+	static_cast<Renderer*>(glfwGetWindowUserPointer(window))->ResizeWindow(width, height);
 }

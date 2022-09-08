@@ -1,82 +1,34 @@
 #pragma once
 
-#include <string>
-#include <cinttypes>
-#include <vector>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "Renderer.h"
 
-struct Camera
-{
-	float fov;
-	float zNear;
-	float zFar;
-	glm::vec3 pos;
-	glm::vec3 dir;
-	glm::vec3 up;
-	int32_t projLoc;
-	int32_t orthoProjLoc;
-	int32_t viewLoc;
-	int32_t is2DLoc;
-};
-
-struct GraphicsCtx
-{
-};
-
-struct Model
-{
-	uint32_t vao;
-	uint32_t vbo;
-	uint32_t ebo;
-	uint32_t instanceOffsetVbo;
-    uint32_t instanceRotationVbo;
-    uint32_t instanceScaleVbo;
-	uint32_t instanceTextureIndexVbo;
-	size_t indexCount;
-};
-
-struct TextureArray
-{
-	uint32_t texture;
-};
-
-struct Instances
-{
-	std::vector<glm::vec3> offsets;
-	std::vector<float> rotations;
-	std::vector<float> scales;
-	std::vector<uint32_t> textureIndices;
-};
-
-class GLRenderer
+class GLRenderer : public Renderer
 {
 public:
 	GLRenderer(const std::string &windowName, int32_t windowWidth, int32_t windowHeight);
 
-	void CloseWindow();
-	void ResizeWindow(int32_t width, int32_t height);
-	GLFWwindow *GetWindowPtr();
+	void CloseWindow() override;
+	void ResizeWindow(int32_t width, int32_t height) override;
+	GLFWwindow *GetWindowPtr() override;
 
-	void SetClearColor(float r, float g, float b, float a);
-	void BeginDrawing();
-	void EndDrawing();
+	void SetClearColor(float r, float g, float b, float a) override;
+	void BeginDrawing() override;
+	void EndDrawing() override;
 
-	void DrawModel(const Model *model, const TextureArray *textureArray, const Instances *instances);
-	void DrawSprite(const Model *model, const TextureArray *textureArray, const Instances *instances);
+	void DrawModel(const Model *model, const TextureArray *textureArray, const Instances *instances) override;
+	void DrawSprite(const Model *model, const TextureArray *textureArray, const Instances *instances) override;
 
-	Model CreateModel(const std::vector<float> &vertices, const std::vector<uint32_t> &indices);
-	void UpdateModel(Model *model, const std::vector<float>& vertices, const std::vector<uint32_t>& indices);
-	void DestroyModel(Model *model);
+	Model CreateModel(const std::vector<float> &vertices, const std::vector<uint32_t> &indices) override;
+	void UpdateModel(Model *model, const std::vector<float>& vertices, const std::vector<uint32_t>& indices) override;
+	void DestroyModel(Model *model) override;
 
-	TextureArray CreateTextureArray(const std::vector<std::string>& images);
-	void DestroyTextureArray(TextureArray *textureArray);
+	TextureArray CreateTextureArray(const std::vector<std::string>& images) override;
+	void DestroyTextureArray(TextureArray *textureArray) override;
 
-	void UpdateCamera();
-	void SetCameraPosition(glm::vec3 position);
-	void SetCameraRotation(float yRot, float xRot);
-	void ConfigureCamera(float fov);
+	void UpdateCamera() override;
+	void SetCameraPosition(glm::vec3 position) override;
+	void SetCameraRotation(float yRot, float xRot) override;
+	void ConfigureCamera(float fov) override;
 
 private:
 	void GLRenderer::CheckShaderLinkError(uint32_t program);
