@@ -159,7 +159,7 @@ void GLRenderer::ResizeWindow(int32_t width, int32_t height)
 	glViewport(0, 0, width, height);
 }
 
-GLFWwindow *GLRenderer::GetWindowPtr()
+GLFWwindow* GLRenderer::GetWindowPtr()
 {
 	return window;
 }
@@ -180,7 +180,7 @@ void GLRenderer::EndDrawing()
 	glfwPollEvents();
 }
 
-void GLRenderer::DrawModel(const Model *model, const TextureArray *textureArray, const Instances *instances)
+void GLRenderer::DrawModel(const Model* model, const TextureArray* textureArray, const Instances* instances)
 {
 	glBindTexture(GL_TEXTURE_2D, textureArray->texture);
 	glBindVertexArray(model->vao);

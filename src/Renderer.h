@@ -3,8 +3,10 @@
 #include <string>
 #include <cinttypes>
 #include <vector>
-#include <glad/glad.h>
+
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 
 struct Camera
@@ -27,8 +29,8 @@ struct Model
 	uint32_t vbo;
 	uint32_t ebo;
 	uint32_t instanceOffsetVbo;
-    uint32_t instanceRotationVbo;
-    uint32_t instanceScaleVbo;
+	uint32_t instanceRotationVbo;
+	uint32_t instanceScaleVbo;
 	uint32_t instanceTextureIndexVbo;
 	size_t indexCount;
 };
@@ -57,15 +59,15 @@ public:
 	virtual void BeginDrawing() = 0;
 	virtual void EndDrawing() = 0;
 
-	virtual void DrawModel(const Model *model, const TextureArray *textureArray, const Instances *instances) = 0;
-	virtual void DrawSprite(const Model *model, const TextureArray *textureArray, const Instances *instances) = 0;
+	virtual void DrawModel(const Model* model, const TextureArray* textureArray, const Instances* instances) = 0;
+	virtual void DrawSprite(const Model* model, const TextureArray* textureArray, const Instances* instances) = 0;
 
-	virtual Model CreateModel(const std::vector<float> &vertices, const std::vector<uint32_t> &indices) = 0;
-	virtual void UpdateModel(Model *model, const std::vector<float>& vertices, const std::vector<uint32_t>& indices) = 0;
-	virtual void DestroyModel(Model *model) = 0;
+	virtual Model CreateModel(const std::vector<float>& vertices, const std::vector<uint32_t>& indices) = 0;
+	virtual void UpdateModel(Model* model, const std::vector<float>& vertices, const std::vector<uint32_t>& indices) = 0;
+	virtual void DestroyModel(Model* model) = 0;
 
 	virtual TextureArray CreateTextureArray(const std::vector<std::string>& images) = 0;
-	virtual void DestroyTextureArray(TextureArray *textureArray) = 0;
+	virtual void DestroyTextureArray(TextureArray* textureArray) = 0;
 
 	virtual void UpdateCamera() = 0;
 	virtual void SetCameraPosition(glm::vec3 position) = 0;

@@ -2,11 +2,10 @@
 #include <cinttypes>
 #include <vector>
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-#include "GLRenderer.h"
+// #include "GLRenderer.h"
+#include "VKRenderer.h"
 
 /*
  * To implement:
@@ -32,7 +31,7 @@ void ResizeCallback(GLFWwindow* window, int32_t width, int32_t height);
 
 int main(void)
 {
-	GLRenderer rend("gFps", 640, 480);
+	VKRenderer rend("gFps", 640, 480);
 	GLFWwindow* window = rend.GetWindowPtr();
 	glfwSetWindowUserPointer(window, &rend);
 	glfwSetFramebufferSizeCallback(window, ResizeCallback);
