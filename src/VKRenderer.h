@@ -3,9 +3,26 @@
 #define GLFW_INCLUDE_VULKAN
 #include "Renderer.h"
 
+#include <functional>
 #include <VkBootstrap.h>
 
-// TODO: https://vkguide.dev/docs/chapter-1/vulkan_mainloop_code/
+// TODO: https://vkguide.dev/docs/chapter-3/
+class PipelineBuilder
+{
+public:
+	VkPipeline BuildPipeline(VkDevice device, VkRenderPass pass);
+
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+	VkViewport viewport;
+	VkRect2D scissor;
+	VkPipelineRasterizationStateCreateInfo rasterizer;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo multisampling;
+	VkPipelineLayout pipelineLayout;
+};
+
 class VKRenderer : public Renderer
 {
 public:
@@ -36,13 +53,32 @@ public:
 
 private:
 	void InitVulkan(const std::string& windowName);
+	void InitSwapchain();
 	void InitCommands();
 	void InitDefaultRenderpass();
 	void InitFramebuffers();
 	void InitSyncStructures();
+	void InitPipelines();
+
+	void FlushDeletionList(std::vector<std::function<void()>>& list);
+	void RecreateSwapchain();
+	void CleanupVulkan();
 
 	VkCommandPoolCreateInfo CommandPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags);
 	VkCommandBufferAllocateInfo CommandBufferAllocateInfo(VkCommandPool pool, uint32_t count = 1, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
+	VkPipelineVertexInputStateCreateInfo VertexInputStateCreateInfo();
+	VkPipelineInputAssemblyStateCreateInfo InputAssemblyCreateInfo(VkPrimitiveTopology topology);
+	VkPipelineRasterizationStateCreateInfo RasterizationStateCreateInfo(VkPolygonMode polygonMode);
+	VkPipelineMultisampleStateCreateInfo MulitsamplingStateCreateInfo();
+	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState();
+	VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();
+	VkFenceCreateInfo FenceCreateInfo(VkFenceCreateFlags flags);
+	VkSemaphoreCreateInfo SemaphoreCreateInfo(VkSemaphoreCreateFlags flags);
+	VkViewport DefaultViewport();
+	VkRect2D DefaultScissor();
+
+	bool LoadShaderModule(const char* filePath, VkShaderModule* outShaderModule);
 
 	void CheckVkError(VkResult err);
 
@@ -51,6 +87,11 @@ private:
 	int32_t height;
 	Camera camera;
 
+	std::vector<std::function<void()>> deletionList;
+	std::vector<std::function<void()>> swapchainDeletionList;
+
+	vkb::Instance vkbInstance;
+	vkb::Device vkbDevice;
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice chosenGPU;
@@ -69,4 +110,6 @@ private:
 	VkSemaphore presentSemaphore;
 	VkSemaphore renderSemaphore;
 	VkFence renderFence;
+	VkPipelineLayout trianglePipelineLayout;
+	VkPipeline trianglePipeline;
 };

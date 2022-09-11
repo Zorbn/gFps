@@ -38,4 +38,3 @@ target_link_libraries(
 	vk-bootstrap::vk-bootstrap
 	Vulkan::Vulkan
 )
-
