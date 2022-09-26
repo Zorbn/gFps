@@ -4,23 +4,105 @@
 #include "Renderer.h"
 
 #include <functional>
+#include <unordered_map>
 #include <VkBootstrap.h>
 
-// TODO: https://vkguide.dev/docs/chapter-3/
+#include "../deps/vk_mem_alloc.h"
+
+constexpr uint32_t frameOverlap = 2;
+
+// TODO:
+// https://vkguide.dev/docs/chapter_5 (check comments, VMA_MEMORY_USAGE depric)
+struct AllocatedBuffer
+{
+	VkBuffer buffer;
+	VmaAllocation allocation;
+};
+
+struct AllocatedImage
+{
+	VkImage image;
+	VmaAllocation allocation;
+};
+
+struct VertexInputDescription
+{
+	std::vector<VkVertexInputBindingDescription> bindings;
+	std::vector<VkVertexInputAttributeDescription> attributes;
+
+	VkPipelineVertexInputStateCreateFlags flags = 0;
+};
+
+struct Vertex
+{
+	static VertexInputDescription GetVertexDescription();
+
+	glm::vec3 pos;
+	glm::vec3 normal;
+	glm::vec3 color;
+	glm::vec2 uv;
+};
+
+struct Mesh
+{
+	std::vector<Vertex> vertices;
+	AllocatedBuffer vertexBuffer = {};
+};
+
+struct MeshPushConstants
+{
+	glm::vec4 data;
+	glm::mat4 renderMatrix;
+};
+
+struct Texture
+{
+	AllocatedImage image;
+	VkImageView imageView;
+};
+
+struct GPUCameraData
+{
+	glm::mat4 view;
+	glm::mat4 proj;
+	glm::mat4 viewProj;
+};
+
+struct FrameData
+{
+	VkSemaphore presentSemaphore;
+	VkSemaphore renderSemaphore;
+	VkFence renderFence;
+
+	VkCommandPool commandPool;
+	VkCommandBuffer mainCommandBuffer;
+
+	AllocatedBuffer cameraBuffer;
+	VkDescriptorSet globalDescriptor;
+};
+
+struct UploadContext
+{
+	VkFence uploadFence;
+	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffer;
+};
+
 class PipelineBuilder
 {
 public:
 	VkPipeline BuildPipeline(VkDevice device, VkRenderPass pass);
 
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-	VkViewport viewport;
-	VkRect2D scissor;
-	VkPipelineRasterizationStateCreateInfo rasterizer;
-	VkPipelineColorBlendAttachmentState colorBlendAttachment;
-	VkPipelineMultisampleStateCreateInfo multisampling;
-	VkPipelineLayout pipelineLayout;
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+	VkViewport viewport = {};
+	VkRect2D scissor = {};
+	VkPipelineRasterizationStateCreateInfo rasterizer = {};
+	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+	VkPipelineMultisampleStateCreateInfo multisampling = {};
+	VkPipelineLayout pipelineLayout = {};
+	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 };
 
 class VKRenderer : public Renderer
@@ -58,11 +140,22 @@ private:
 	void InitDefaultRenderpass();
 	void InitFramebuffers();
 	void InitSyncStructures();
+	void InitDescriptors();
 	void InitPipelines();
+	void LoadImages();
+
+	void LoadMeshes();
+	void UploadMesh(Mesh& mesh);
 
 	void FlushDeletionList(std::vector<std::function<void()>>& list);
 	void RecreateSwapchain();
 	void CleanupVulkan();
+	bool LoadShaderModule(const char* filePath, VkShaderModule* outShaderModule);
+	FrameData& GetCurrentFrame();
+	void CheckVkError(VkResult err);
+	AllocatedBuffer CreateBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+	void LoadImageFromFile(const char* file, AllocatedImage& outImage);
 
 	VkCommandPoolCreateInfo CommandPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags);
 	VkCommandBufferAllocateInfo CommandBufferAllocateInfo(VkCommandPool pool, uint32_t count = 1, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -77,10 +170,13 @@ private:
 	VkSemaphoreCreateInfo SemaphoreCreateInfo(VkSemaphoreCreateFlags flags);
 	VkViewport DefaultViewport();
 	VkRect2D DefaultScissor();
-
-	bool LoadShaderModule(const char* filePath, VkShaderModule* outShaderModule);
-
-	void CheckVkError(VkResult err);
+	VkImageCreateInfo ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
+	VkImageViewCreateInfo ImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+	VkPipelineDepthStencilStateCreateInfo DepthStencilCreateInfo(bool depthTest, bool depthWrite, VkCompareOp compareOp);
+	VkCommandBufferBeginInfo CommandBufferBeginInfo(VkCommandBufferUsageFlags flags);
+	VkSubmitInfo SubmitInfo(VkCommandBuffer* cmd);
+	VkSamplerCreateInfo SamplerCreateInfo(VkFilter filters, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+	VkWriteDescriptorSet WriteDescriptorImage(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorImageInfo* imageInfo, uint32_t binding);
 
 	GLFWwindow* window;
 	int32_t width;
@@ -92,24 +188,48 @@ private:
 
 	vkb::Instance vkbInstance;
 	vkb::Device vkbDevice;
+
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice chosenGPU;
 	VkDevice device;
 	VkSurfaceKHR surface;
+
 	VkSwapchainKHR swapchain;
 	VkFormat swapchainImageFormat;
 	std::vector<VkImage> swapchainImages;
 	std::vector<VkImageView> swapchainImageViews;
+
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
-	VkCommandPool commandPool;
-	VkCommandBuffer mainCommandBuffer;
+
 	VkRenderPass renderPass;
 	std::vector<VkFramebuffer> framebuffers;
-	VkSemaphore presentSemaphore;
-	VkSemaphore renderSemaphore;
-	VkFence renderFence;
+
+	FrameData frames[frameOverlap];
+	int32_t frameNumber;
+
 	VkPipelineLayout trianglePipelineLayout;
 	VkPipeline trianglePipeline;
+
+	VmaAllocator allocator;
+
+	//VkPipeline meshPipeline;
+	Mesh triangleMesh;
+
+	VkImageView depthImageView;
+	AllocatedImage depthImage;
+	VkFormat depthFormat;
+
+	VkDescriptorSetLayout globalSetLayout;
+	VkDescriptorPool descriptorPool;
+
+	UploadContext uploadContext;
+
+	std::unordered_map<std::string, Texture> loadedTextures;
+
+	VkDescriptorSetLayout singleTextureSetLayout;
+	VkDescriptorSet testTextureSet = { VK_NULL_HANDLE };
+
+	VkPhysicalDeviceProperties gpuProperties;
 };

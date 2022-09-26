@@ -7,7 +7,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../deps/stb_image.h"
 
-const char* vertexShaderSource =
+constexpr char* vertexShaderSource =
 "#version 330 core\n"
 
 "layout (location = 0) in vec3 aPos;\n"
@@ -55,7 +55,7 @@ const char* vertexShaderSource =
 "   TextureIndex = aTextureIndex;\n"
 "}\0";
 
-const char* fragmentShaderSource =
+constexpr char* fragmentShaderSource =
 "#version 330 core\n"
 
 "out vec4 FragColor;\n"
@@ -78,7 +78,7 @@ const char* fragmentShaderSource =
 "   FragColor = texColor;\n"
 "}\0";
 
-const int32_t maxShaderErrorLen = 512;
+constexpr int32_t maxShaderErrorLen = 512;
 
 GLRenderer::GLRenderer(const std::string& windowName, int32_t windowWidth, int32_t windowHeight)
 	: width(windowWidth), height(windowHeight)

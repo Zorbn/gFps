@@ -9,6 +9,8 @@
 
 #include <glm/glm.hpp>
 
+// TODO: The structs are specific to GL, move them there are replace the user facing
+// part with hashes into a map of resources.
 struct Camera
 {
 	float fov;
